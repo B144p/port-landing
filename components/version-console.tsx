@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState, type KeyboardEvent } from "react";
+import { useRef, useState, type FocusEvent, type KeyboardEvent } from "react";
+import { AutoLock } from "@/components/auto-lock";
 import { VersionRow } from "@/components/version-row";
 import type { FrontendVersion } from "@/lib/types";
 
@@ -8,7 +9,8 @@ import type { FrontendVersion } from "@/lib/types";
  * Owns the channel cursor: arrow keys, Home/End, hover, and native
  * focus all move `selectedIndex` and keep DOM focus in sync with it,
  * so Tab order and the ▶ cursor never disagree about which row is
- * "current".
+ * "current". Also tracks hover/focus-within to pause the auto-lock
+ * countdown while a visitor is actively interacting with the list.
  */
 export function VersionConsole({
   versions,
@@ -18,6 +20,7 @@ export function VersionConsole({
   totalViews: number;
 }) {
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [interacting, setInteracting] = useState(false);
   const rowRefs = useRef<(HTMLAnchorElement | null)[]>([]);
 
   const focusRow = (index: number) => {
@@ -49,8 +52,19 @@ export function VersionConsole({
     }
   };
 
+  const onBlur = (event: FocusEvent<HTMLDivElement>) => {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      setInteracting(false);
+    }
+  };
+
   return (
-    <>
+    <div
+      onMouseEnter={() => setInteracting(true)}
+      onMouseLeave={() => setInteracting(false)}
+      onFocus={() => setInteracting(true)}
+      onBlur={onBlur}
+    >
       <dl className="mb-4 grid grid-cols-[12ch_1fr] gap-x-4 gap-y-1 border-b border-green-dim/40 pb-3">
         <dt className="text-[11px] uppercase tracking-[0.05em] text-text-muted">
           Total Views
@@ -74,6 +88,7 @@ export function VersionConsole({
           />
         ))}
       </ul>
-    </>
+      <AutoLock target={versions[0]} targetIndex={0} paused={interacting} />
+    </div>
   );
 }
