@@ -1,8 +1,15 @@
 "use client";
 
-import { useRef, useState, type FocusEvent, type KeyboardEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FocusEvent,
+  type KeyboardEvent,
+} from "react";
 import { AutoLock } from "@/components/auto-lock";
 import { VersionRow } from "@/components/version-row";
+import { pingFrontendVersions, selectableVersions } from "@/lib/api";
 import type { FrontendVersion } from "@/lib/types";
 
 /**
@@ -13,15 +20,40 @@ import type { FrontendVersion } from "@/lib/types";
  * countdown while a visitor is actively interacting with the list.
  */
 export function VersionConsole({
-  versions,
-  totalViews,
+  versions: initialVersions,
+  totalViews: initialTotalViews,
 }: {
   versions: FrontendVersion[];
   totalViews: number;
 }) {
+  const [versions, setVersions] = useState(initialVersions);
+  const [totalViews, setTotalViews] = useState(initialTotalViews);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [interacting, setInteracting] = useState(false);
   const rowRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    // Browser-only view-counting ping (needs a real visitor IP for the
+    // backend's per-IP dedupe to work) that also refreshes the list
+    // with current view counts. Best-effort: a CORS rejection, offline
+    // state, or a cold-starting backend must never take the page down
+    // — the server-rendered data stays put on failure.
+    pingFrontendVersions()
+      .then((data) => {
+        if (cancelled) return;
+        const refreshed = selectableVersions(data.versions);
+        if (refreshed.length === 0) return;
+        setVersions(refreshed);
+        setTotalViews(data.totalViews);
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const focusRow = (index: number) => {
     const clamped = Math.max(0, Math.min(versions.length - 1, index));
