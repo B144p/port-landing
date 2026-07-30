@@ -1,1 +1,176 @@
 @import "tailwindcss";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-mono);
+  --font-mono: var(--font-mono);
+  --font-heading: var(--font-mono);
+  --color-ring: var(--ring);
+  --color-border: var(--border);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* raw tokens exposed as utilities (bg-bg-panel, text-green-bright, …) */
+  --color-bg-void: var(--bg-void);
+  --color-bg-panel: var(--bg-panel);
+  --color-bg-raised: var(--bg-raised);
+  --color-green-dim: var(--green-dim);
+  --color-green-mid: var(--green-mid);
+  --color-green-bright: var(--green-bright);
+  --color-amber: var(--amber);
+  --color-red-alert: var(--red-alert);
+  --color-text-muted: var(--text-muted);
+}
+
+/*
+ * Dark only, no light mode, no theme toggle.
+ * Never pure #000 / #fff. Three semantic accents: green, amber, red.
+ */
+:root {
+  --bg-void: #020604;
+  --bg-panel: #04120a;
+  --bg-raised: #06190d;
+  --green-dim: #1f6b3a;
+  --green-mid: #33cc66;
+  --green-bright: #66ff99;
+  --green-glow: rgba(51, 204, 102, 0.35);
+  --amber: #ffb000;
+  --red-alert: #ff3b30;
+  --text-muted: #2d7a4a;
+  --radius: 4px;
+
+  --background: var(--bg-void);
+  --foreground: var(--green-mid);
+  --border: var(--green-dim);
+  --ring: var(--green-bright);
+}
+
+/* Monitor chassis: translucent glass over the animated background.
+   Blur is decorative — fallback is the opaque panel color. */
+@layer components {
+  .monitor-chassis {
+    background: rgba(4, 18, 10, 0.35);
+    backdrop-filter: blur(10px) saturate(1.2);
+    -webkit-backdrop-filter: blur(10px) saturate(1.2);
+  }
+  @media (max-width: 767px) {
+    .monitor-chassis {
+      backdrop-filter: blur(6px) saturate(1.2);
+      -webkit-backdrop-filter: blur(6px) saturate(1.2);
+    }
+  }
+  @supports not (backdrop-filter: blur(1px)) {
+    .monitor-chassis {
+      background: #04120a;
+    }
+  }
+
+  /* Corner ticks: two spans × two pseudos = four 8px L-brackets */
+  .monitor-ticks::before,
+  .monitor-ticks::after,
+  .monitor-ticks > .monitor-ticks-b::before,
+  .monitor-ticks > .monitor-ticks-b::after {
+    content: "";
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-color: var(--green-mid);
+    border-style: solid;
+    border-width: 0;
+    pointer-events: none;
+  }
+  .monitor-ticks::before {
+    top: -1px;
+    left: -1px;
+    border-top-width: 1px;
+    border-left-width: 1px;
+  }
+  .monitor-ticks::after {
+    top: -1px;
+    right: -1px;
+    border-top-width: 1px;
+    border-right-width: 1px;
+  }
+  .monitor-ticks > .monitor-ticks-b::before {
+    bottom: -1px;
+    left: -1px;
+    border-bottom-width: 1px;
+    border-left-width: 1px;
+  }
+  .monitor-ticks > .monitor-ticks-b::after {
+    bottom: -1px;
+    right: -1px;
+    border-bottom-width: 1px;
+    border-right-width: 1px;
+  }
+}
+
+/* Active-row flicker (80ms) and blinking cursor. steps() easing:
+   smooth easing reads organic, stepped reads mechanical. */
+@keyframes row-flicker {
+  0%, 100% {
+    opacity: 1;
+  }
+  25%, 75% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes cursor-blink {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0;
+  }
+}
+@theme inline {
+  --animate-row-flicker: row-flicker 80ms steps(2, jump-none) 1;
+  --animate-cursor-blink: cursor-blink 1s steps(1) infinite;
+}
+
+/* Grid drift — transform only, loops exactly one 32px pitch */
+@keyframes grid-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 32px, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-grid-drift {
+    animation: none !important;
+  }
+  .animate-row-flicker,
+  .animate-cursor-blink {
+    animation: none !important;
+    opacity: 1;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-size: 13px;
+  }
+  html {
+    @apply font-mono;
+  }
+  :focus-visible {
+    outline: 1px solid var(--green-bright);
+    outline-offset: 2px;
+  }
+}
