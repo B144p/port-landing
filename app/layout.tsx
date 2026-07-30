@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
@@ -11,9 +11,21 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-mono",
 });
 
+const description =
+  "Pick a frontend version to view, or wait — the first one loads automatically.";
+
 export const metadata: Metadata = {
-  title: "PORT",
-  description: "Frontend version select.",
+  title: "PORT // VERSION SELECT",
+  description,
+  openGraph: {
+    title: "PORT // VERSION SELECT",
+    description,
+    type: "website",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#020604",
 };
 
 export default function RootLayout({
