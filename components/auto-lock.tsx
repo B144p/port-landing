@@ -8,14 +8,15 @@ const TICK_MS = 250;
 
 /**
  * WCAG 2.2.1 (Timing Adjustable) escape hatch for the 60s auto-redirect:
- * a visible countdown, pausable by interacting with the console or
- * backgrounding the tab, and permanently cancellable via [ HOLD ].
+ * a visible countdown, pausable by interacting with the console, and
+ * permanently cancellable via [ HOLD ].
  *
  * Tracks `remainingMs` and decrements it by the real wall-clock delta
  * between ticks (rather than assuming each tick is exactly TICK_MS) so
  * background-tab timer throttling can't make the redirect overshoot —
  * and while paused, the delta simply isn't applied, so no elapsed time
- * is ever double-counted on resume.
+ * is ever double-counted on resume. The countdown (and the redirect it
+ * triggers) keeps running even while the tab is backgrounded.
  */
 export function AutoLock({
   target,
@@ -30,33 +31,21 @@ export function AutoLock({
   // match exactly — the interval below is what starts the clock.
   const [remainingMs, setRemainingMs] = useState<number | null>(null);
   const [held, setHeld] = useState(false);
-  const [tabHidden, setTabHidden] = useState(
-    () => typeof document !== "undefined" && document.visibilityState === "hidden",
-  );
 
-  const effectivePaused = paused || tabHidden;
-  const pausedRef = useRef(effectivePaused);
+  const pausedRef = useRef(paused);
   const heldRef = useRef(held);
   const lastTickRef = useRef<number | null>(null);
 
   useEffect(() => {
-    pausedRef.current = effectivePaused;
+    pausedRef.current = paused;
     // Re-anchor the reference tick so the time spent paused is never
     // subtracted once the countdown resumes.
     lastTickRef.current = Date.now();
-  }, [effectivePaused]);
+  }, [paused]);
 
   useEffect(() => {
     heldRef.current = held;
   }, [held]);
-
-  useEffect(() => {
-    const onVisibilityChange = () =>
-      setTabHidden(document.visibilityState === "hidden");
-    document.addEventListener("visibilitychange", onVisibilityChange);
-    return () =>
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-  }, []);
 
   useEffect(() => {
     lastTickRef.current = Date.now();
