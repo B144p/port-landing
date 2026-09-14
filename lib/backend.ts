@@ -1,10 +1,8 @@
 import "server-only";
-import type { FrontendVersionList } from "@/lib/types";
+import { FRONTEND_VERSION_KEY } from "@/features/frontend-version/keys";
 
 const API_URL = process.env.API_URL ?? "http://localhost:3000";
 const PROXY_SHARED_SECRET = process.env.PROXY_SHARED_SECRET;
-const FRONTEND_VERSION_KEY =
-  process.env.NEXT_PUBLIC_FRONTEND_VERSION_KEY ?? "port-landing";
 
 /**
  * Server-side read (RSC fetches aren't subject to CORS). No version header,
@@ -18,9 +16,6 @@ export async function backendGet<T>(
   if (!res.ok) throw new Error(`LINK FAILURE // ${res.status} ${path}`);
   return res.json() as Promise<T>;
 }
-
-export const getFrontendVersions = () =>
-  backendGet<FrontendVersionList>("/v1/frontend-version");
 
 /**
  * Used by app/api/*\/route.ts handlers — the only fetches a browser can
