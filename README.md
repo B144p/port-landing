@@ -17,13 +17,17 @@ Open [http://localhost:3000](http://localhost:3000).
 
 Copy `.env.example` to `.env.local` and fill in:
 
-- `NEXT_PUBLIC_API_URL` — base URL of the `port-server` instance to fetch
-  `/v1/frontend-version` from (e.g. a local instance, the `dev` Render deployment, or
-  production once it's live).
+- `API_URL` — base URL of the `port-server` instance to fetch `/v1/frontend-version`
+  from (e.g. a local instance, the `dev` Render deployment, or production once it's
+  live). Server-only: `lib/backend.ts` and `app/api/frontend-version/route.ts` are the
+  only things that read it — the browser never talks to `port-server` directly.
 - `NEXT_PUBLIC_FRONTEND_VERSION_KEY` — the `key` this page sends as
   `X-Frontend-Version` on its own view-counting request. Must match a `FrontendVersion.key`
   row on the backend for the request to be attributed (unknown keys are ignored, not
   errored).
+- `PROXY_SHARED_SECRET` — must match `port-server`'s `PROXY_SHARED_SECRET`. Lets
+  `app/api/frontend-version` forward the visitor's real IP so view counting stays
+  accurate; leave unset in development if `port-server`'s is also unset.
 
 ## Learn more
 

@@ -1,7 +1,8 @@
 import { Monitor } from "@/components/monitor";
 import { EmptyState, ErrorState } from "@/components/states";
 import { VersionConsole } from "@/components/version-console";
-import { getFrontendVersions, selectableVersions } from "@/lib/api";
+import { selectableVersions } from "@/lib/api";
+import { getFrontendVersions } from "@/lib/backend";
 import type { FrontendVersionList } from "@/lib/types";
 
 export default async function Home() {
