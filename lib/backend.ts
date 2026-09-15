@@ -31,7 +31,19 @@ export async function proxyGet(request: Request, path: string): Promise<Response
     "X-Frontend-Version": FRONTEND_VERSION_KEY,
   };
 
-  const visitorIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  // The LAST entry, not the first: X-Forwarded-For is client-appendable —
+  // `X-Forwarded-For: 1.2.3.4` is not a forbidden fetch header, so anything
+  // left of the entry Vercel's own edge appends is attacker-controlled.
+  // Trusting the first entry would let any visitor spoof this at will,
+  // defeating port-server's per-visitor dedupe/rate-limit entirely. This
+  // mirrors port-server's own TRUST_PROXY_HOPS: trust exactly the one
+  // real hop between the visitor and this app, counted from the end.
+  const visitorIp = request.headers
+    .get("x-forwarded-for")
+    ?.split(",")
+    .map((ip) => ip.trim())
+    .filter(Boolean)
+    .at(-1);
   if (visitorIp) headers["X-Visitor-Ip"] = visitorIp;
   if (PROXY_SHARED_SECRET) headers["X-Proxy-Secret"] = PROXY_SHARED_SECRET;
 
@@ -46,8 +58,7 @@ export async function proxyGet(request: Request, path: string): Promise<Response
       cache: "no-store",
       signal: AbortSignal.timeout(5000),
     });
-    const body = await res.text();
-    return new Response(body, {
+    return new Response(res.body, {
       status: res.status,
       headers: {
         "content-type": res.headers.get("content-type") ?? "application/json",
