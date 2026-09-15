@@ -2,7 +2,9 @@ import { isServer, QueryClient } from "@tanstack/react-query";
 
 function makeQueryClient(): QueryClient {
   return new QueryClient({
-    defaultOptions: { queries: { staleTime: 60_000 } },
+    defaultOptions: {
+      queries: { staleTime: 60_000, refetchOnWindowFocus: false, retry: 1 },
+    },
   });
 }
 
