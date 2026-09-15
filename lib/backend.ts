@@ -1,7 +1,9 @@
 import "server-only";
 import { FRONTEND_VERSION_KEY } from "@/features/frontend-version/keys";
 
-const API_URL = process.env.API_URL ?? "http://localhost:3000";
+// No fallback: the obvious default (localhost:3000) is also Next's own dev
+// port, so a missing API_URL would quietly make this app proxy to itself.
+const API_URL = process.env.API_URL || missingEnv("API_URL");
 const PROXY_SHARED_SECRET = process.env.PROXY_SHARED_SECRET;
 
 // X-Forwarded-For is only as trustworthy as whatever sits in front of this
@@ -78,4 +80,8 @@ export async function proxyGet(request: Request, path: string): Promise<Response
       headers: { "content-type": "application/json" },
     });
   }
+}
+
+function missingEnv(name: string): never {
+  throw new Error(`${name} is not set — point it at port-server (see .env.example).`);
 }

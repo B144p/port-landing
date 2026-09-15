@@ -8,16 +8,16 @@ first version by `order` after 60 seconds of inactivity. Themed after `port-osci
 
 ```bash
 pnpm install
-pnpm dev
+pnpm dev -p 3100
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3100](http://localhost:3100). (`port-server` defaults to port 3000.)
 
 ## Environment variables
 
 Copy `.env.example` to `.env.local` and fill in:
 
-- `API_URL` — base URL of the `port-server` instance to fetch `/v1/frontend-version`
+- `API_URL` — required (startup fails without it). Base URL of the `port-server` instance to fetch `/v1/frontend-version`
   from (e.g. a local instance, the `dev` Render deployment, or production once it's
   live). Server-only: `lib/backend.ts` and `app/api/frontend-version/route.ts` are the
   only things that read it — the browser never talks to `port-server` directly.
