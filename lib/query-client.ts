@@ -3,7 +3,13 @@ import { isServer, QueryClient } from "@tanstack/react-query";
 function makeQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
-      queries: { staleTime: 60_000, refetchOnWindowFocus: false, retry: 1 },
+      queries: {
+        staleTime: 60_000,
+        refetchOnWindowFocus: false,
+        // Never retry during server rendering: a down backend would otherwise hold
+        // the render for the fetch timeout twice over. Browsers still retry once.
+        retry: isServer ? 0 : 1,
+      },
     },
   });
 }
