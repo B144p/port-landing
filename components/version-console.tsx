@@ -1,17 +1,11 @@
 "use client";
 
-import {
-  useRef,
-  useState,
-  type FocusEvent,
-  type KeyboardEvent,
-} from "react";
+import { useRef, useState, type FocusEvent, type KeyboardEvent } from "react";
 import { AutoLock } from "@/components/auto-lock";
 import { VersionRow } from "@/components/version-row";
 import {
   selectableVersions,
   useFrontendVersion,
-  type FrontendVersion,
 } from "@/features/frontend-version/client";
 
 /**
@@ -26,34 +20,16 @@ export function VersionConsole() {
   // here, so `data` is populated on this very first render — no loading
   // state to handle. staleTime: 0 (see ../features/frontend-version/client)
   // means mount also triggers one real view-counting refetch through the
-  // BFF, which is what updates `data` afterwards.
+  // BFF, which is what updates `data` afterwards. That query's own fetcher
+  // already refuses to resolve into an empty catalog (React Query then
+  // keeps the last good `data` instead), so `versions`/`totalViews` can be
+  // derived directly here with no local mirroring or "ignore empty" guard.
   const { data } = useFrontendVersion();
-  const [versions, setVersions] = useState<FrontendVersion[]>(() =>
-    data ? selectableVersions(data.versions) : [],
-  );
-  const [totalViews, setTotalViews] = useState(() => data?.totalViews ?? 0);
+  const versions = data ? selectableVersions(data.versions) : [];
+  const totalViews = data?.totalViews ?? 0;
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [interacting, setInteracting] = useState(false);
   const rowRefs = useRef<(HTMLAnchorElement | null)[]>([]);
-
-  // Adjusting state during render (React's documented pattern for deriving
-  // state from a changing prop/query result) instead of an effect: `data`
-  // changes when the mount-time refetch through the BFF settles, and this
-  // needs to run before that render commits, not after. A network failure
-  // or a cold-starting backend must never blank the list — React Query
-  // already keeps the last successful `data` on a failed background
-  // refetch, so this only guards a *successful* refetch that happens to
-  // come back with no selectable versions, matching the previous
-  // ping-based implementation's behavior.
-  const [lastSeenData, setLastSeenData] = useState(data);
-  if (data && data !== lastSeenData) {
-    setLastSeenData(data);
-    const refreshed = selectableVersions(data.versions);
-    if (refreshed.length > 0) {
-      setVersions(refreshed);
-      setTotalViews(data.totalViews);
-    }
-  }
 
   const focusRow = (index: number) => {
     const clamped = Math.max(0, Math.min(versions.length - 1, index));
