@@ -4,6 +4,15 @@ import { FRONTEND_VERSION_KEY } from "@/features/frontend-version/keys";
 const API_URL = process.env.API_URL ?? "http://localhost:3000";
 const PROXY_SHARED_SECRET = process.env.PROXY_SHARED_SECRET;
 
+// X-Forwarded-For is only as trustworthy as whatever sits in front of this
+// server. Vercel overwrites it at its edge and drops client-sent values, so
+// it's safe there (VERCEL=1 is set automatically). Served directly — e.g. a
+// bare `next start` — Next.js passes a client-sent header straight through,
+// so it's ignored and port-server falls back to this server's own IP. Set
+// TRUST_FORWARDED_FOR=true only behind another proxy that sets the header.
+const TRUST_FORWARDED_FOR =
+  process.env.VERCEL === "1" || process.env.TRUST_FORWARDED_FOR === "true";
+
 /**
  * Server-side read (RSC fetches aren't subject to CORS). No version header,
  * so it never counts as a page view — see proxyGet for the one that does.
@@ -31,19 +40,18 @@ export async function proxyGet(request: Request, path: string): Promise<Response
     "X-Frontend-Version": FRONTEND_VERSION_KEY,
   };
 
-  // The LAST entry, not the first: X-Forwarded-For is client-appendable —
-  // `X-Forwarded-For: 1.2.3.4` is not a forbidden fetch header, so anything
-  // left of the entry Vercel's own edge appends is attacker-controlled.
-  // Trusting the first entry would let any visitor spoof this at will,
-  // defeating port-server's per-visitor dedupe/rate-limit entirely. This
-  // mirrors port-server's own TRUST_PROXY_HOPS: trust exactly the one
+  // The LAST entry, not the first: with a proxy that appends rather than
+  // overwrites, anything left of the entry it added is client-controlled.
+  // This mirrors port-server's own TRUST_PROXY_HOPS: trust exactly the one
   // real hop between the visitor and this app, counted from the end.
-  const visitorIp = request.headers
-    .get("x-forwarded-for")
-    ?.split(",")
-    .map((ip) => ip.trim())
-    .filter(Boolean)
-    .at(-1);
+  const visitorIp = TRUST_FORWARDED_FOR
+    ? request.headers
+        .get("x-forwarded-for")
+        ?.split(",")
+        .map((ip) => ip.trim())
+        .filter(Boolean)
+        .at(-1)
+    : undefined;
   if (visitorIp) headers["X-Visitor-Ip"] = visitorIp;
   if (PROXY_SHARED_SECRET) headers["X-Proxy-Secret"] = PROXY_SHARED_SECRET;
 

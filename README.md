@@ -28,6 +28,10 @@ Copy `.env.example` to `.env.local` and fill in:
 - `PROXY_SHARED_SECRET` — must match `port-server`'s `PROXY_SHARED_SECRET`. Lets
   `app/api/frontend-version` forward the visitor's real IP so view counting stays
   accurate; leave unset in development if `port-server`'s is also unset.
+- `TRUST_FORWARDED_FOR` — optional. The visitor IP comes from `X-Forwarded-For`, which
+  is trusted automatically on Vercel (it overwrites the header at its edge). Set this to
+  `true` only behind another proxy that sets the header; served directly, a visitor
+  could spoof it, so it's ignored.
 
 ## Learn more
 
