@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { FrontendVersion } from "@/lib/types";
+import type { FrontendVersion } from "@/features/frontend-version/client";
 
 const DURATION_MS = 60_000;
 const TICK_MS = 250;

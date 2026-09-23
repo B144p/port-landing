@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { BackgroundLayer } from "@/components/background-layer";
 import { Scanlines } from "@/components/scanlines";
+import { Providers } from "@/app/providers";
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
@@ -41,7 +42,7 @@ export default function RootLayout({
       <body className="min-h-full">
         <BackgroundLayer />
         <Scanlines />
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

@@ -1,16 +1,12 @@
 "use client";
 
-import {
-  useEffect,
-  useRef,
-  useState,
-  type FocusEvent,
-  type KeyboardEvent,
-} from "react";
+import { useRef, useState, type FocusEvent, type KeyboardEvent } from "react";
 import { AutoLock } from "@/components/auto-lock";
 import { VersionRow } from "@/components/version-row";
-import { pingFrontendVersions, selectableVersions } from "@/lib/api";
-import type { FrontendVersion } from "@/lib/types";
+import {
+  selectableVersions,
+  useFrontendVersion,
+} from "@/features/frontend-version/client";
 
 /**
  * Owns the channel cursor: arrow keys, Home/End, hover, and native
@@ -19,41 +15,21 @@ import type { FrontendVersion } from "@/lib/types";
  * "current". Also tracks hover/focus-within to pause the auto-lock
  * countdown while a visitor is actively interacting with the list.
  */
-export function VersionConsole({
-  versions: initialVersions,
-  totalViews: initialTotalViews,
-}: {
-  versions: FrontendVersion[];
-  totalViews: number;
-}) {
-  const [versions, setVersions] = useState(initialVersions);
-  const [totalViews, setTotalViews] = useState(initialTotalViews);
+export function VersionConsole() {
+  // The parent page already fetched this successfully and hydrated it in
+  // here, so `data` is populated on this very first render — no loading
+  // state to handle. staleTime: 0 (see ../features/frontend-version/client)
+  // means mount also triggers one real view-counting refetch through the
+  // BFF, which is what updates `data` afterwards. That query's own fetcher
+  // already refuses to resolve into an empty catalog (React Query then
+  // keeps the last good `data` instead), so `versions`/`totalViews` can be
+  // derived directly here with no local mirroring or "ignore empty" guard.
+  const { data } = useFrontendVersion();
+  const versions = data ? selectableVersions(data.versions) : [];
+  const totalViews = data?.totalViews ?? 0;
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [interacting, setInteracting] = useState(false);
   const rowRefs = useRef<(HTMLAnchorElement | null)[]>([]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    // Browser-only view-counting ping (needs a real visitor IP for the
-    // backend's per-IP dedupe to work) that also refreshes the list
-    // with current view counts. Best-effort: a CORS rejection, offline
-    // state, or a cold-starting backend must never take the page down
-    // — the server-rendered data stays put on failure.
-    pingFrontendVersions()
-      .then((data) => {
-        if (cancelled) return;
-        const refreshed = selectableVersions(data.versions);
-        if (refreshed.length === 0) return;
-        setVersions(refreshed);
-        setTotalViews(data.totalViews);
-      })
-      .catch(() => {});
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const focusRow = (index: number) => {
     const clamped = Math.max(0, Math.min(versions.length - 1, index));

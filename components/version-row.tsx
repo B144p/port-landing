@@ -1,6 +1,6 @@
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
-import type { FrontendVersion } from "@/lib/types";
+import type { FrontendVersion } from "@/features/frontend-version/client";
 
 /**
  * A real <a href> so selection works with zero JS — middle-click,
